@@ -10,11 +10,9 @@ git clone https://github.com/jerji/stm-contrib-server.git
 cd stm-contrib-server
 mkdir -p data
 docker compose up -d
-```
 
-Set your API key via env var (override the default):
-```bash
-STM_CONTRIB_API_KEY="your-secret-key" docker compose up -d
+# Grab the API key from logs:
+docker compose logs stm-contrib-api | grep "API KEY"
 ```
 
 ## API Endpoints
@@ -83,6 +81,26 @@ docker compose exec stm-contrib-api python manage.py stats
 4. You review submissions weekly via `docker exec` SQLite queries
 5. Add confirmed codes to `res/xml/product_codes.xml` in the LecteurOPUS fork
 6. Ship next APK
+
+## nginx Reverse Proxy
+
+The API listens on port 8100 locally. Example nginx config:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name stmcontrib.jouellet.net;
+
+    ssl_certificate     /etc/ssl/certs/stmcontrib.crt;
+    ssl_certificate_key /etc/ssl/private/stmcontrib.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:8100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
 
 ## Security
 
