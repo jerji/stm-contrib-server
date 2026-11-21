@@ -52,6 +52,41 @@ def cmd_delete_submission(args):
     print(f"Submission {sid} deleted.")
 
 
+def cmd_delete_bus_sub(args):
+    if not args:
+        print("Usage: delete-bus-sub <submission_id>")
+        return
+    sid = int(args[0])
+    db = sqlite3.connect(DB_PATH)
+    db.execute("DELETE FROM bus_submissions WHERE id=?", (sid,))
+    db.commit()
+    db.close()
+    print(f"Bus submission {sid} deleted.")
+
+
+def cmd_delete_bus_vote(args):
+    if not args:
+        print("Usage: delete-bus-vote <vote_id>")
+        return
+    vid = int(args[0])
+    db = sqlite3.connect(DB_PATH)
+    db.execute("DELETE FROM bus_votes WHERE id=?", (vid,))
+    db.commit()
+    db.close()
+    print(f"Bus vote {vid} deleted.")
+
+
+def cmd_reset_all(*args):
+    db = sqlite3.connect(DB_PATH)
+    db.execute("DELETE FROM product_submissions")
+    db.execute("DELETE FROM product_votes")
+    db.execute("DELETE FROM bus_submissions")
+    db.execute("DELETE FROM bus_votes")
+    db.commit()
+    db.close()
+    print("All submissions and votes deleted.")
+
+
 def cmd_list_bus_votes(*args):
     db = sqlite3.connect(DB_PATH)
     rows = db.execute(
@@ -119,6 +154,9 @@ def cmd_help():
 COMMANDS = {
     "list-products": cmd_list_products,
     "delete-sub": cmd_delete_submission,
+    "delete-bus-sub": cmd_delete_bus_sub,
+    "delete-bus-vote": cmd_delete_bus_vote,
+    "reset-all": cmd_reset_all,
     "list-bus-votes": cmd_list_bus_votes,
     "list-bus-subs": cmd_list_bus_subs,
     "stats": cmd_stats,
