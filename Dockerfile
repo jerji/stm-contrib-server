@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY app/ /app/app/
+COPY manage.py /app/manage.py
 
 # Create data directory
 RUN mkdir -p /app/data

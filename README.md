@@ -50,24 +50,29 @@ Names with score ≥ 3 appear in the public listing for your review.
 
 ## Admin Tasks
 
-No admin API routes. SSH into the host and use the container directly:
+No admin API routes. Use dedicated commands via the container:
 
 ```bash
-# View all product submissions
-docker compose exec stm-contrib-api sqlite3 /app/data/stmcontrib.db \
-  "SELECT * FROM product_submissions ORDER BY vote_score DESC;"
+# List all product code submissions
+docker compose exec stm-contrib-api python manage.py list-products
 
-# Confirm a submission (mark for inclusion in next app release)
-docker compose exec stm-contrib-api sqlite3 /app/data/stmcontrib.db \
-  "UPDATE product_submissions SET confirmed=1 WHERE id=5;"
+# Confirm a product name (include in next app release)
+docker compose exec stm-contrib-api python manage.py confirm 5
+
+# Unconfirm (mistake)
+docker compose exec stm-contrib-api python manage.py unconfirm 5
+
+# Delete a spurious submission
+docker compose exec stm-contrib-api python manage.py delete-sub 5
 
 # View recent bus votes
-docker compose exec stm-contrib-api sqlite3 /app/data/stmcontrib.db \
-  "SELECT * FROM bus_votes ORDER BY id DESC LIMIT 20;"
+docker compose exec stm-contrib-api python manage.py list-bus-votes
 
-# View recent bus submissions
-docker compose exec stm-contrib-api sqlite3 /app/data/stmcontrib.db \
-  "SELECT * FROM bus_submissions ORDER BY id DESC LIMIT 20;"
+# View recent bus name submissions (new routes people found)
+docker compose exec stm-contrib-api python manage.py list-bus-subs
+
+# Database stats
+docker compose exec stm-contrib-api python manage.py stats
 ```
 
 ## Workflow
