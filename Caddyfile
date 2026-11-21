@@ -1,8 +1,7 @@
+# While setting up: use self-signed certs (DNS not yet configured)
+# Once stmcontrib.jouellet.net resolves to this server, remove the tls line
+# for automatic Let's Encrypt certificates.
 stmcontrib.jouellet.net {
+    tls internal
     reverse_proxy stm-contrib-api:8000
-}
-
-# Redirect www to bare domain
-www.stmcontrib.jouellet.net {
-    redir https://stmcontrib.jouellet.net{uri}
 }
