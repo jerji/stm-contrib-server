@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.database import get_db
 from app.models import BusVote, BusSubmission
 from app.schemas import BusVoteRequest, BusSubmitRequest
@@ -26,7 +27,7 @@ async def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: str 
         BusVote.bus_name == req.bus_name,
         BusVote.operator_id == req.operator_id,
         BusVote.bus_id == req.bus_id,
-    ).with_entities(db.func.coalesce(db.func.sum(BusVote.vote), 0)).scalar()
+    ).with_entities(func.coalesce(func.sum(BusVote.vote), 0)).scalar()
 
     return {"status": "ok", "bus_name": req.bus_name, "operator_id": req.operator_id, "bus_id": req.bus_id, "net_score": net}
 
