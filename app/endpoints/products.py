@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
-from app.models import ProductSubmission, ProductVote, ApiKey
+from app.models import ProductSubmission, ProductVote
 from app.schemas import ProductSubmitRequest, ProductVoteRequest, ProductResponse
 from app.auth import verify_api_key
 
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
 
 @router.post("/submit")
-def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key: ApiKey = Depends(verify_api_key)):
+def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Submit or upvote a product code → name mapping."""
     # Check if this exact product code + name already exists
     existing = db.query(ProductSubmission).filter(
@@ -20,7 +20,7 @@ def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key
 
     if existing:
         # Upvote the existing submission
-        vote = ProductVote(submission_id=existing.id, api_key_id=key.id, vote=1)
+        vote = ProductVote(submission_id=existing.id, api_key_id=0, vote=1)
         db.add(vote)
         existing.vote_score += 1
         db.commit()
@@ -30,7 +30,7 @@ def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key
         product_code=req.product_code,
         product_name=req.product_name,
         operator_id=req.operator_id,
-        api_key_id=key.id,
+        api_key_id=0,
         vote_score=1,
     )
     db.add(sub)
@@ -38,7 +38,7 @@ def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key
     db.refresh(sub)
 
     # Add the submitter's own vote
-    vote = ProductVote(submission_id=sub.id, api_key_id=key.id, vote=1)
+    vote = ProductVote(submission_id=sub.id, api_key_id=0, vote=1)
     db.add(vote)
     db.commit()
 
@@ -46,13 +46,13 @@ def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key
 
 
 @router.post("/vote")
-def vote_product(req: ProductVoteRequest, db: Session = Depends(get_db), key: ApiKey = Depends(verify_api_key)):
+def vote_product(req: ProductVoteRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Vote on a product name submission."""
     sub = db.query(ProductSubmission).filter(ProductSubmission.id == req.submission_id).first()
     if not sub:
         raise HTTPException(status_code=404, detail="Submission not found")
 
-    vote = ProductVote(submission_id=req.submission_id, api_key_id=key.id, vote=req.vote)
+    vote = ProductVote(submission_id=req.submission_id, api_key_id=0, vote=req.vote)
     db.add(vote)
     sub.vote_score += req.vote
     db.commit()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import BusVote, BusSubmission, ApiKey
+from app.models import BusVote, BusSubmission
 from app.schemas import BusVoteRequest, BusSubmitRequest
 from app.auth import verify_api_key
 
@@ -9,14 +9,14 @@ router = APIRouter(prefix="/api/v1/bus", tags=["bus"])
 
 
 @router.post("/vote")
-def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: ApiKey = Depends(verify_api_key)):
+def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Vote to confirm (+1) or reject (-1) a bus name → operator/bus ID mapping."""
     vote = BusVote(
         bus_name=req.bus_name,
         operator_id=req.operator_id,
         bus_id=req.bus_id,
         vote=req.vote,
-        api_key_id=key.id,
+        api_key_id=0,
     )
     db.add(vote)
     db.commit()
@@ -32,13 +32,13 @@ def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: ApiKey = D
 
 
 @router.post("/submit")
-def submit_bus(req: BusSubmitRequest, db: Session = Depends(get_db), key: ApiKey = Depends(verify_api_key)):
+def submit_bus(req: BusSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Submit an unknown bus/operator pair for manual review."""
     sub = BusSubmission(
         bus_name=req.bus_name,
         operator_name=req.operator_name,
         card_data=req.card_data or "",
-        api_key_id=key.id,
+        api_key_id=0,
     )
     db.add(sub)
     db.commit()

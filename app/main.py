@@ -1,14 +1,11 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import secrets
 
-from app.database import init_db, SessionLocal, get_db
-from app.models import ApiKey
+from app.database import init_db
 from app.endpoints import bus, products
-from sqlalchemy.orm import Session
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -36,18 +33,6 @@ app.include_router(products.router)
 @app.on_event("startup")
 def on_startup():
     init_db()
-    db = SessionLocal()
-    existing = db.query(ApiKey).filter(ApiKey.is_admin == True).first()
-    if not existing:
-        admin_key = secrets.token_hex(32)
-        key_record = ApiKey(key=admin_key, label="auto-generated admin", is_admin=True)
-        db.add(key_record)
-        db.commit()
-        print(f"\n{'='*60}")
-        print(f"  ADMIN API KEY: {admin_key}")
-        print(f"  Save this! It won't be shown again.")
-        print(f"{'='*60}\n")
-    db.close()
 
 
 @app.get("/")
@@ -58,13 +43,3 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.post("/api/v1/keys/generate")
-def generate_key(label: str = "", admin: bool = False, db: Session = Depends(get_db)):
-    """Generate a new API key."""
-    key = secrets.token_hex(32)
-    record = ApiKey(key=key, label=label, is_admin=admin)
-    db.add(record)
-    db.commit()
-    return {"api_key": key, "label": label, "is_admin": admin}
