@@ -4,12 +4,13 @@
 import sqlite3
 import sys
 import os
+import secrets
 
 DB_PATH = "/app/data/stmcontrib.db"
+API_KEY_PATH = "/app/data/api_key.txt"
 
 
 def print_table(rows, headers):
-    """Simple formatted table output."""
     if not rows:
         print("No results.")
         return
@@ -31,44 +32,16 @@ def print_table(rows, headers):
 def cmd_list_products():
     db = sqlite3.connect(DB_PATH)
     rows = db.execute(
-        "SELECT id, product_code, product_name, operator_id, confirmed, vote_score "
+        "SELECT id, product_code, product_name, operator_id, vote_score "
         "FROM product_submissions ORDER BY vote_score DESC"
     ).fetchall()
-    print_table(rows, ["ID", "Code", "Name", "OpID", "Confirmed", "Score"])
+    print_table(rows, ["ID", "Code", "Name", "OpID", "Score"])
     db.close()
-
-
-def cmd_confirm(args):
-    if not args:
-        print("Usage: confirm <submission_id>")
-        return
-    sid = int(args[0])
-    db = sqlite3.connect(DB_PATH)
-    db.execute("UPDATE product_submissions SET confirmed=1 WHERE id=?", (sid,))
-    db.commit()
-    affected = db.total_changes
-    db.close()
-    if affected:
-        print(f"Submission {sid} confirmed.")
-    else:
-        print(f"No submission found with id={sid}")
-
-
-def cmd_unconfirm(args):
-    if not args:
-        print("Usage: unconfirm <submission_id>")
-        return
-    sid = int(args[0])
-    db = sqlite3.connect(DB_PATH)
-    db.execute("UPDATE product_submissions SET confirmed=0 WHERE id=?", (sid,))
-    db.commit()
-    db.close()
-    print(f"Submission {sid} unconfirmed.")
 
 
 def cmd_delete_submission(args):
     if not args:
-        print("Usage: delete-submission <submission_id>")
+        print("Usage: delete-sub <submission_id>")
         return
     sid = int(args[0])
     db = sqlite3.connect(DB_PATH)
@@ -89,7 +62,7 @@ def cmd_list_bus_votes():
     db.close()
 
 
-def cmd_list_bus_submissions():
+def cmd_list_bus_subs():
     db = sqlite3.connect(DB_PATH)
     rows = db.execute(
         "SELECT id, bus_name, operator_name, created_at "
@@ -102,37 +75,55 @@ def cmd_list_bus_submissions():
 def cmd_stats():
     db = sqlite3.connect(DB_PATH)
     product_count = db.execute("SELECT COUNT(*) FROM product_submissions").fetchone()[0]
-    confirmed = db.execute("SELECT COUNT(*) FROM product_submissions WHERE confirmed=1").fetchone()[0]
     bus_votes = db.execute("SELECT COUNT(*) FROM bus_votes").fetchone()[0]
     bus_subs = db.execute("SELECT COUNT(*) FROM bus_submissions").fetchone()[0]
     db.close()
-    print(f"Product submissions: {product_count} ({confirmed} confirmed)")
-    print(f"Bus votes:          {bus_votes}")
-    print(f"Bus submissions:    {bus_subs}")
+    print(f"Product submissions: {product_count}")
+    print(f"Bus votes:           {bus_votes}")
+    print(f"Bus submissions:     {bus_subs}")
+
+
+def cmd_rotate_key(args):
+    """Generate a new API key and save to config file."""
+    key = secrets.token_hex(32)
+    with open(API_KEY_PATH, "w") as f:
+        f.write(key)
+    print(f"New API key generated: {key}")
+    print(f"Saved to {API_KEY_PATH}")
+    print("Update the app's built-in key and rebuild.")
+
+
+def cmd_show_key(args):
+    """Display the current API key."""
+    if os.path.exists(API_KEY_PATH):
+        with open(API_KEY_PATH) as f:
+            print(f"Current API key: {f.read().strip()}")
+    else:
+        print("No API key file found. Restart the container to generate one.")
 
 
 def cmd_help():
     print("STM Contrib Admin Commands")
     print("=" * 40)
     print("  list-products       Show all product code submissions")
-    print("  confirm <id>        Mark a product submission as confirmed")
-    print("  unconfirm <id>      Unmark a confirmed submission")
-    print("  delete-sub <id>     Delete a spurious submission")
+    print("  delete-sub <id>     Delete a submission (spam/wrong)")
     print("  list-bus-votes      Show recent bus line votes")
     print("  list-bus-subs       Show recent bus name submissions")
     print("  stats               Database statistics")
+    print("  rotate-key          Generate a new API key")
+    print("  show-key            Display the current API key")
     print()
     print("Usage: docker compose exec stm-contrib-api python manage.py <command> [args]")
 
 
 COMMANDS = {
     "list-products": cmd_list_products,
-    "confirm": cmd_confirm,
-    "unconfirm": cmd_unconfirm,
     "delete-sub": cmd_delete_submission,
     "list-bus-votes": cmd_list_bus_votes,
-    "list-bus-subs": cmd_list_bus_submissions,
+    "list-bus-subs": cmd_list_bus_subs,
     "stats": cmd_stats,
+    "rotate-key": cmd_rotate_key,
+    "show-key": cmd_show_key,
 }
 
 

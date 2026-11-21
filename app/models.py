@@ -33,8 +33,7 @@ class ProductSubmission(Base):
     product_code = Column(Integer, nullable=False, index=True)
     product_name = Column(String(256), nullable=False)
     operator_id = Column(Integer, default=0)
-    api_key_id = Column(Integer, nullable=False)
-    confirmed = Column(Boolean, default=False)
+    api_key_id = Column(Integer, default=0)
     vote_score = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

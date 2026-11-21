@@ -12,14 +12,12 @@ router = APIRouter(prefix="/api/v1/products", tags=["products"])
 @router.post("/submit")
 def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Submit or upvote a product code → name mapping."""
-    # Check if this exact product code + name already exists
     existing = db.query(ProductSubmission).filter(
         ProductSubmission.product_code == req.product_code,
         ProductSubmission.product_name == req.product_name,
     ).first()
 
     if existing:
-        # Upvote the existing submission
         vote = ProductVote(submission_id=existing.id, api_key_id=0, vote=1)
         db.add(vote)
         existing.vote_score += 1
@@ -37,7 +35,6 @@ def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key
     db.commit()
     db.refresh(sub)
 
-    # Add the submitter's own vote
     vote = ProductVote(submission_id=sub.id, api_key_id=0, vote=1)
     db.add(vote)
     db.commit()
@@ -62,28 +59,21 @@ def vote_product(req: ProductVoteRequest, db: Session = Depends(get_db), key: st
 
 @router.get("/", response_model=list[ProductResponse])
 def list_products(db: Session = Depends(get_db)):
-    """Get all product code mappings (confirmed + top-voted unconfirmed)."""
+    """Get all product code submissions with score >= 3 (community consensus)."""
     results = db.query(ProductSubmission).filter(
-        ProductSubmission.confirmed == True
-    ).all()
-
-    # Also include unconfirmed submissions with score >= 3 (community consensus)
-    unconfirmed = db.query(ProductSubmission).filter(
-        ProductSubmission.confirmed == False,
         ProductSubmission.vote_score >= 3,
-    ).all()
+    ).order_by(ProductSubmission.vote_score.desc()).all()
 
-    all_products = results + unconfirmed
     seen = set()
     unique = []
-    for p in all_products:
+    for p in results:
         if p.product_code not in seen:
             seen.add(p.product_code)
             unique.append(ProductResponse(
                 product_code=p.product_code,
                 product_name=p.product_name,
                 operator_id=p.operator_id,
-                confirmed=p.confirmed,
+                confirmed=True,
                 vote_score=p.vote_score,
             ))
 
@@ -92,10 +82,10 @@ def list_products(db: Session = Depends(get_db)):
 
 @router.get("/search")
 def search_products(q: str, db: Session = Depends(get_db)):
-    """Search product codes by name fragment."""
+    """Search product codes by name fragment (score >= 3 only)."""
     results = db.query(ProductSubmission).filter(
         ProductSubmission.product_name.ilike(f"%{q}%"),
-        (ProductSubmission.confirmed == True) | (ProductSubmission.vote_score >= 3),
+        ProductSubmission.vote_score >= 3,
     ).all()
 
     seen = set()
@@ -107,7 +97,7 @@ def search_products(q: str, db: Session = Depends(get_db)):
                 product_code=p.product_code,
                 product_name=p.product_name,
                 operator_id=p.operator_id,
-                confirmed=p.confirmed,
+                confirmed=True,
                 vote_score=p.vote_score,
             ))
 
