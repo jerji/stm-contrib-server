@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/v1/bus", tags=["bus"])
 
 
 @router.post("/vote")
-def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
+async def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Vote to confirm (+1) or reject (-1) a bus name → operator/bus ID mapping."""
     vote = BusVote(
         bus_name=req.bus_name,
@@ -32,7 +32,7 @@ def vote_bus(req: BusVoteRequest, db: Session = Depends(get_db), key: str = Depe
 
 
 @router.post("/submit")
-def submit_bus(req: BusSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
+async def submit_bus(req: BusSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Submit an unknown bus/operator pair for manual review."""
     sub = BusSubmission(
         bus_name=req.bus_name,

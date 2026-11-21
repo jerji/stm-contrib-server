@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
 
 @router.post("/submit")
-def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
+async def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Submit or upvote a product code → name mapping."""
     existing = db.query(ProductSubmission).filter(
         ProductSubmission.product_code == req.product_code,
@@ -43,7 +43,7 @@ def submit_product(req: ProductSubmitRequest, db: Session = Depends(get_db), key
 
 
 @router.post("/vote")
-def vote_product(req: ProductVoteRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
+async def vote_product(req: ProductVoteRequest, db: Session = Depends(get_db), key: str = Depends(verify_api_key)):
     """Vote on a product name submission."""
     sub = db.query(ProductSubmission).filter(ProductSubmission.id == req.submission_id).first()
     if not sub:
