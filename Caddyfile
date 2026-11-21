@@ -1,0 +1,8 @@
+stmcontrib.jouellet.net {
+    reverse_proxy stm-contrib-api:8000
+}
+
+# Redirect www to bare domain
+www.stmcontrib.jouellet.net {
+    redir https://stmcontrib.jouellet.net{uri}
+}
