@@ -29,7 +29,7 @@ def print_table(rows, headers):
     print(sep)
 
 
-def cmd_list_products():
+def cmd_list_products(*args):
     db = sqlite3.connect(DB_PATH)
     rows = db.execute(
         "SELECT id, product_code, product_name, operator_id, vote_score "
@@ -52,7 +52,7 @@ def cmd_delete_submission(args):
     print(f"Submission {sid} deleted.")
 
 
-def cmd_list_bus_votes():
+def cmd_list_bus_votes(*args):
     db = sqlite3.connect(DB_PATH)
     rows = db.execute(
         "SELECT id, bus_name, operator_id, bus_id, vote, created_at "
@@ -62,7 +62,7 @@ def cmd_list_bus_votes():
     db.close()
 
 
-def cmd_list_bus_subs():
+def cmd_list_bus_subs(*args):
     db = sqlite3.connect(DB_PATH)
     rows = db.execute(
         "SELECT id, bus_name, operator_name, created_at "
@@ -72,7 +72,7 @@ def cmd_list_bus_subs():
     db.close()
 
 
-def cmd_stats():
+def cmd_stats(*args):
     db = sqlite3.connect(DB_PATH)
     product_count = db.execute("SELECT COUNT(*) FROM product_submissions").fetchone()[0]
     bus_votes = db.execute("SELECT COUNT(*) FROM bus_votes").fetchone()[0]
