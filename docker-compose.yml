@@ -1,6 +1,6 @@
 services:
   stm-contrib-api:
-    build: .
+    image: ghcr.io/jerji/stm-contrib-server:latest
     container_name: stm-contrib-api
     restart: unless-stopped
     volumes:
